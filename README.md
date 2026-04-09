@@ -88,7 +88,7 @@ crypto_etl_project/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/crypto-etl-pipeline.git
+git clone https://github.com/ZackDev10/crypto-etl-pipeline.git
 cd crypto-etl-pipeline
 ```
 
