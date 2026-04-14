@@ -1,5 +1,7 @@
+import os
 import sys
 import logging
+import requests
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -87,9 +89,28 @@ def run_pipeline() -> None:
         logger.info(f"  Rows inserted     : {rows_inserted}")
         logger.info("=" * 55)
 
-    except ConnectionError as e:
-        logger.critical(f"STARTUP FAILURE — {e}")
-        sys.exit(1)   # Non-zero exit code signals failure to any scheduler
+    except Exception as e:
+        # 1. Log the full error to your local file/terminal
+        logger.exception(f"UNEXPECTED FAILURE — {e}")
+
+        # 2. Grab the webhook URL from your environment
+        webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+
+        # 3. If the URL exists, format and send the alert
+        if webhook_url:
+            slack_payload = {
+                "text": f"🚨 *CRITICAL ALERT: Crypto ETL Pipeline Failed!* 🚨\n\n*Error Details:*\n`{e}`\n\n_Please check the GitHub Actions logs for the full traceback._"
+            }
+
+            try:
+                # Send the POST request to Slack
+                requests.post(webhook_url, json=slack_payload)
+                logger.info("Slack alert dispatched successfully.")
+            except Exception as slack_error:
+                logger.error(f"Failed to send Slack alert: {slack_error}")
+
+        # 4. Exit with a failure code so GitHub Actions knows it crashed
+        sys.exit(1)
 
     except ValueError as e:
         logger.error(f"PIPELINE FAILURE — {e}")
